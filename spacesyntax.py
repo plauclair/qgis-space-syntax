@@ -68,7 +68,7 @@ class SpaceSyntax:
         QObject.connect(self.action, SIGNAL("triggered()"), self.run)
         # add toolbar button and menu item
         self.iface.addToolBarIcon(self.action)
-        self.iface.addPluginToMenu("&Space Syntax Analysis", self.action)
+        self.iface.addPluginToVectorMenu("&Space Syntax Analysis", self.action)
 
     def unload(self):
         # remove the plugin menu item and icon
