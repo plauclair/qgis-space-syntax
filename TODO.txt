@@ -1,0 +1,97 @@
+<plauclair> it seems like getFeatures gets all attributes in addition to geometry, is it possible to only get geometry?
+* volaya (~volaya@lns-bzn-31-82-252-216-62.adsl.proxad.net) a rejoint #qgis
+<NathanW> plauclair: getFeatures(QgsFeatureRequest().setSubsetOfAttributes([]))
+<plauclair> thanks! I was getting exponential run times ;)
+* cgs_bob (~bob@c-76-20-4-97.hsd1.ca.comcast.net) a rejoint #qgis
+* akthor (~torsten@soajnuvpn.state.ak.us) a rejoint #qgis
+* mlechner est parti (Quit: Verlassend)
+* mbernasocchi (~Thunderbi@qgis/developer/mbernasocchi) a rejoint #qgis
+<plauclair> turns out updating unsupported scripts is a great way to get to learn :)
+<plauclair> it seems like using changeAttributeValue() has pretty big performance impacts in a for loop, is there anything faster that I should use?
+* mbernasocchi est parti (Quit: ciao)
+* mbernasocchi (~Thunderbi@qgis/developer/mbernasocchi) a rejoint #qgis
+<NathanW> can you post your code
+<NathanW> (not in here)
+<NathanW> http://osgeo.pastebin.com/
+<sigq> Title: Pastebin.com - #1 paste tool since 2002! (at osgeo.pastebin.com)
+<plauclair> http://pastebin.com/kkMWLuCz
+<sigq> Title: [Python] # Space Syntax Analysis plugin for Quantum GIS - Python version # # Copyrigh - Pastebin.com (at pastebin.com)
+<plauclair> calls are made lines 328 and up
+<plauclair> I've found something similar on StackExchange, is that related? http://gis.stackexchange.com/questions/58296/speed-of-editing-attributes-in-qgis-from-a-python-plugin
+<sigq> Title: Speed of editing attributes in QGIS from a Python plugin - Geographic Information Systems Stack Exchange (at gis.stackexchange.com)
+* volaya est parti (Quit: volaya)
+* borys_ est parti (Read error: Operation timed out)
+<plauclair> problem is, the answer doesn't provide code and I'm not familiar enough with the API to fully understand how to change the code..
+* bobo_ est parti (Quit: Quitte)
+<NathanW> what you are doing is right
+<NathanW> you sure there is a performance hit in that section?
+* dassouki (~ahmed@142.162.176.18) a rejoint #qgis
+<plauclair> hmm, seems right now
+<plauclair> I don't know why, I ran it once and it took nearly 30 seconds
+<plauclair> I just ran the same code after forcequitting QGIS and it runs at about 2 seconds
+* mbernasocchi est parti (Quit: ciao)
+<plauclair> this is only a small test case, but I was wondering if storing each value in a dict and then updating with changeAttributeValues() would provide any improvement
+<NathanW> plauclair: well nothing is commited until layer.commitChanges()
+<plauclair> ok, good to know :)
+<NathanW> so what I would do is wrap that for loop in a timing method to check
+<NathanW> import time
+<NathanW> start = time.time()
+<NathanW> end = time.time() - start
+<NathanW> put start before the for block and end after, but before the commit
+<plauclair> NathanW,  yes, I want to figure out timing for different parts of the code some time later
+* volaya (~volaya@lns-bzn-31-82-252-216-62.adsl.proxad.net) a rejoint #qgis
+<plauclair> by the way, the maintainer of the original plugin isn't responding to my emails and seems to have abandoned the plugin, how do I update it in the repos then?
+<NathanW> plauclair: I can give you admin rights to it
+<plauclair> ok, I'll ask you when I've done a few more changes
+<NathanW> in favor of transparency could you send a email to me but cc the dev list just explain that the author isn't answering emails and you have a updated version for 2.0
+<plauclair> yes, I'll email the dev one last time to make sure and then do that
+<NathanW> ok cool
+<plauclair> I still need to change the code so it runs ok on very large data sets, right now it just fills memory, I'd rather make the attribute change iterative
+<NathanW> just so that other people know what is going on and it doesn't look like a hijack
+<plauclair> yep
+<plauclair> one last small thing, before all the loops the plugin adds attributes, but on the first run I cannot seem to write in it, all the fields are marked as null, is there anything special I should do?
+<NathanW> strange, one sec
+* ginetto est parti (Ping timeout: 272 seconds)
+<NathanW> that script is really messy :S
+<NathanW> (not your fault I know)
+<NathanW> try moving layer.startEditing to after the new fields
+<plauclair> that and the turkish variable names ;)
+<NathanW> yesh
+<NathanW> yes
+<plauclair> well, that did the trick!
+<plauclair> thanks a lot!
+<NathanW> all those getFeatures are going to add up
+<plauclair> what would you recommend?
+<NathanW> mainly because they are not needed
+<NathanW> well obj is just the layer feature count so you could just iterate over the whole layer
+<NathanW> like this
+<NathanW> http://pastebin.com/T8CKyyVF
+<sigq> Title: features = provider.getFeatures(QgsFeatureRequest().setSubsetOfAttributes([])) - Pastebin.com (at pastebin.com)
+<NathanW> lines 224-245
+<plauclair> thanks!
+<plauclair> I'll be implementing that on those loops
+<NathanW> it should speed things up a little bit
+<NathanW> and that for beat in features2: loop can be done using a spatialindex so you don't have to look up each feature each time
+<NathanW> in fact I have written a post about that topic http://nathanw.net/2013/01/04/using-a-qgis-spatial-index-to-speed-up-your-code/
+<sigq> Title: Using a QGIS spatial index to speed up your code (at nathanw.net)
+<plauclair> added to my to-read list :)
+<plauclair> really appreciate your help
+<NathanW> no worries
+<plauclair> 2 weeks ago I couldn't even write any python, now I'm trying to maintain this plugin..
+<NathanW> well this one will be a good one to learn on because it's a mess :)
+<NathanW> watch this too http://pyvideo.org/video/1780/transforming-code-into-beautiful-idiomatic-pytho
+<sigq> Title: pyvideo.org - Transforming Code into Beautiful, Idiomatic Python (at pyvideo.org)
+<NathanW> and all of these http://pyvideo.org/speaker/138/raymond-hettinger
+<sigq> Title: pyvideo.org - Raymond Hettinger (at pyvideo.org)
+<plauclair> yes, I happen to have seen that first one yesterday
+<plauclair> I was pretty impressed by xrange
+* volaya est parti (Quit: volaya)
+<NathanW> yeah it's handy
+<plauclair> I've been developping in PHP for nearly 4-5 years now, I really appreciate how python does everything
+<plauclair> every time I have to go back to my php code for different stuff I maintain, I cringe ;)
+<NathanW> good old php
+* volaya (~volaya@lns-bzn-31-82-252-216-62.adsl.proxad.net) a rejoint #qgis
+<plauclair> I'll probably end up changing all that code, but I need to teach myself graphs before that, I've seen a few algorithms I want to implement
+<plauclair> at least getting that one up to speed is a good start to learn QGIS python
+<plauclair> got to go, thank again, I'll be  contacting you when I'm satisfied with the changes, bye!
+<NathanW> plauclair: catch ya
