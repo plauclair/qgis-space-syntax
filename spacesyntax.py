@@ -35,7 +35,8 @@
 # Software Foundation,Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 
-import os, sys
+import os
+import sys
 import string
 import math
 import time
@@ -76,28 +77,25 @@ class SpaceSyntax:
 
 
     def run(self):
-
         self.dlg = SpaceSyntaxDialog()
-
         vlayer = self.iface.activeLayer()
 
-        if (vlayer):
+        if vlayer:
 
             vprovider = vlayer.dataProvider()
-            allAttrs = vprovider.attributeIndexes()
-            # vprovider.select( allAttrs )
-            myFields = vprovider.fields()
-            print myFields
-
+            all_attrs = vprovider.attributeIndexes()
+            # vprovider.select( all_attrs )
+            my_fields = vprovider.fields()
+            print my_fields
 
             # script for GUI actions
 
-            for i in myFields:
+            for i in my_fields:
                 self.dlg.ui.comboBox.addItem(unicode(i.name()))
 
             QObject.connect(self.dlg.ui.buttonBox, SIGNAL("accepted()"), self.ok_clicked)
-            QObject.connect(self.dlg.ui.checkBox_3, SIGNAL("clicked(bool)"), self.toggleDL)
-            QObject.connect(self.dlg.ui.checkBox_4, SIGNAL("clicked(bool)"), self.toggleDL)
+            QObject.connect(self.dlg.ui.checkbox_network_file, SIGNAL("clicked(bool)"), self.toggleDL)
+            QObject.connect(self.dlg.ui.checkbox_geodes_matrix, SIGNAL("clicked(bool)"), self.toggleDL)
             QObject.connect(self.dlg.ui.radioButton, SIGNAL("clicked(bool)"), self.toggleCF)
             QObject.connect(self.dlg.ui.radioButton_2, SIGNAL("clicked(bool)"), self.toggleCF)
 
@@ -106,24 +104,20 @@ class SpaceSyntax:
         else:
             QMessageBox.critical(self.iface.mainWindow(), "Error", "Please select a layer")
 
-
     def toggleDL(self, boolDL):
-        dm = self.dlg.ui.checkBox_3.isChecked() or self.dlg.ui.checkBox_4.isChecked()
-        self.dlg.ui.checkBox_5.setEnabled(dm)
+        dm = self.dlg.ui.checkbox_network_file.isChecked() or self.dlg.ui.checkbox_geodes_matrix.isChecked()
+        self.dlg.ui.checkbox_loc_network_file.setEnabled(dm)
         self.dlg.ui.radioButton.setEnabled(dm)
         self.dlg.ui.radioButton_2.setEnabled(dm)
         self.dlg.ui.comboBox.setEnabled(dm and self.dlg.ui.radioButton.isChecked())
-        self.dlg.ui.comboBox_1.setEnabled(self.dlg.ui.checkBox_3.isChecked())
+        self.dlg.ui.comboBox_1.setEnabled(self.dlg.ui.checkbox_network_file.isChecked())
 
     def toggleCF(self, boolSF):
         if self.dlg.ui.radioButton.isChecked() and (
-            self.dlg.ui.checkBox_3.isChecked() or self.dlg.ui.checkBox_4.isChecked()):
+            self.dlg.ui.checkbox_network_file.isChecked() or self.dlg.ui.checkbox_geodes_matrix.isChecked()):
             self.dlg.ui.comboBox.setEnabled(True)
         else:
             self.dlg.ui.comboBox.setEnabled(False)
-
-
-
 
     # main script constructing adjusted graph, calculating geodesic and space syntax parameters
 
@@ -136,7 +130,7 @@ class SpaceSyntax:
         fname = layer.source()
         lname = layer.name()
         nedge = fname[:-4]
-        dirName = nedge[:-len(lname)]
+        dir_name = nedge[:-len(lname)]
         obj = layer.featureCount()
 
         etiket = []
@@ -144,13 +138,12 @@ class SpaceSyntax:
         for i in range(obj):
             betiket.append((i + 1).__str__())
 
-        if self.dlg.ui.radioButton.isChecked() and (
-            self.dlg.ui.checkBox_3.isChecked() or self.dlg.ui.checkBox_4.isChecked()):
+        if self.dlg.ui.radioButton.isChecked() and (self.dlg.ui.checkbox_network_file.isChecked() or self.dlg.ui.checkbox_geodes_matrix.isChecked()):
             fieldim = self.dlg.ui.comboBox.currentText()
             fieldin = provider.fieldNameIndex(fieldim)
-            allAttrs = provider.attributeIndexes()
-            provider.select(allAttrs)
-            myFields = provider.fields()
+            all_attrs = provider.attributeIndexes()
+            provider.select(all_attrs)
+            my_fields = provider.fields()
             feat = QgsFeature()
             while provider.nextFeature(feat):
                 attributeMap = feat.attributeMap()
@@ -159,13 +152,13 @@ class SpaceSyntax:
         if self.dlg.ui.radioButton_2.isChecked():
             etiket = betiket
 
-        if self.dlg.ui.checkBox_5.isChecked():
-            fnamem = QFileDialog.getSaveFileName(None, 'Save files', dirName, "")
+        if self.dlg.ui.checkbox_loc_network_file.isChecked():
+            fnamem = QFileDialog.getSaveFileName(None, 'Save files', dir_name, "")
             nedge = fnamem
 
         netip = self.dlg.ui.comboBox_1.currentText()
-        if self.dlg.ui.checkBox_3.isChecked():
-            if netip == "dl":
+        if self.dlg.ui.checkbox_network_file.isChecked():
+            if netip == ".dl":
                 edges = open(nedge + '.dl', 'w')
                 edges.write("dl n=" + obj.__str__())
                 edges.write('\n')
@@ -186,7 +179,7 @@ class SpaceSyntax:
                 edges.write("*Arcs")
                 edges.write('\n')
 
-        if self.dlg.ui.checkBox_4.isChecked():
+        if self.dlg.ui.checkbox_geodes_matrix.isChecked():
             geodesic = open(nedge + '.txt', 'w')
 
         feat = QgsFeature()
@@ -201,11 +194,8 @@ class SpaceSyntax:
         atr = []
 
         nufi = provider.fields().count()
-        QMessageBox.information(self.iface.mainWindow(), "Result", "Nufi = " + str(nufi))
-
 
         # adding space syntax parameters as new fields to the attribute table
-
 
         provider.addAttributes([
             QgsField("Lineno", QVariant.Int),
@@ -234,8 +224,8 @@ class SpaceSyntax:
 
                 if kesisme and (s1 != s2):
                     sna[s1][s2] = 1
-                    cntr = cntr + 1
-                    if self.dlg.ui.checkBox_3.isChecked():
+                    cntr += 1
+                    if self.dlg.ui.checkbox_network_file.isChecked():
                         edges.write(betiket[s1])
                         edges.write(" ")
                         edges.write(betiket[s2])
@@ -245,28 +235,29 @@ class SpaceSyntax:
             atr.append(cntr)
             fortas.append(iliski)
 
-        if self.dlg.ui.checkBox_3.isChecked():
+        if self.dlg.ui.checkbox_network_file.isChecked():
             edges.close()
 
         dst = sna
 
-        # calculation of geodesic
+        # calculation of geodesic distance
 
         for mas in range(obj):
             for kas in range(obj - 1):
                 fas = 1
                 for sas in range(obj):
-                    if ((dst[mas][sas] == (kas + 1)) and (sas != mas)):
+                    if (dst[mas][sas] == (kas + 1)) and (sas != mas):
                         iliski = fortas[sas]
-                        sizeOfList = len(iliski)
-                        for sIndex in range(sizeOfList):
+                        size_of_list = len(iliski)
+                        for sIndex in range(size_of_list):
                             tas = iliski[sIndex]
-                            if ((tas != mas)) and ((dst[mas][tas] > (kas + 1)) or (dst[mas][tas] == 0)):
+                            if (tas != mas) and ((dst[mas][tas] > (kas + 1)) or (dst[mas][tas] == 0)):
                                 dst[mas][tas] = kas + 2
-                                fas = fas + 1
-                if (fas == 1): break
+                                fas += 1
+                if fas == 1:
+                    break
 
-        if self.dlg.ui.checkBox_4.isChecked():
+        if self.dlg.ui.checkbox_geodes_matrix.isChecked():
             for mas in range(obj):
                 geodesic.write(" ")
                 geodesic.write(etiket[mas])
@@ -280,8 +271,7 @@ class SpaceSyntax:
             geodesic.close()
 
         connectivity = []
-        globalIntegration = []
-
+        global_integration = []
 
         # calculation of space syntax parameters
 
@@ -301,12 +291,12 @@ class SpaceSyntax:
 
             for vas in range(obj):
                 td = td + dst[s1][vas]
-                if (dst[s1][vas] == 1):
-                    cnt = cnt + 1
-                    cntrl = cntrl + 1 / float(atr[vas])
-                if (dst[s1][vas] < locd):
+                if dst[s1][vas] == 1:
+                    cnt += 1
+                    cntrl += 1 / float(atr[vas])
+                if dst[s1][vas] < locd:
                     ld3 = ld3 + dst[s1][vas]
-                    deg3 = deg3 + 1
+                    deg3 += 1
 
             md = float(td) / (fobj - 1)
             ra = 2 * (md - 1) / (fobj - 2)
@@ -322,32 +312,31 @@ class SpaceSyntax:
             lrr = lra / ldvl
             lint = 1 / lrr
 
-            layer.changeAttributeValue(feat.id(), nufi, s1 + 1)
-            layer.changeAttributeValue(feat.id(), nufi + 1, cnt)
-            layer.changeAttributeValue(feat.id(), nufi + 2, td)
-            layer.changeAttributeValue(feat.id(), nufi + 3, md)
-            layer.changeAttributeValue(feat.id(), nufi + 4, gint)
-            layer.changeAttributeValue(feat.id(), nufi + 5, ld3)
-            layer.changeAttributeValue(feat.id(), nufi + 6, lint)
-            layer.changeAttributeValue(feat.id(), nufi + 7, cntrl)
+            layer.changeAttributeValue(feat.id(), nufi, s1 + 1)     # line number
+            layer.changeAttributeValue(feat.id(), nufi + 1, cnt)    # connectivity
+            layer.changeAttributeValue(feat.id(), nufi + 2, td)     # total depth
+            layer.changeAttributeValue(feat.id(), nufi + 3, md)     # mean depth
+            layer.changeAttributeValue(feat.id(), nufi + 4, gint)   # global integration
+            layer.changeAttributeValue(feat.id(), nufi + 5, ld3)    # local depth
+            layer.changeAttributeValue(feat.id(), nufi + 6, lint)   # local integration
+            layer.changeAttributeValue(feat.id(), nufi + 7, cntrl)  # control
 
             connectivity.append(float(cnt))
-            globalIntegration.append(gint)
+            global_integration.append(gint)
 
         layer.commitChanges()
 
-
         # calculation of intelligibility value
 
-        if self.dlg.ui.checkBox_2.isChecked():
-            intelvalue = getPearsonCorrelation(connectivity, globalIntegration)
+        if self.dlg.ui.checkbox_intel_val.isChecked():
+            intelvalue = getPearsonCorrelation(connectivity, global_integration)
             QMessageBox.information(self.iface.mainWindow(), "Result", "Intelligibility value: " + str(intelvalue))
 
         # check execution
         QMessageBox.information(self.iface.mainWindow(), "Result", "Time: " + str(time.time() - start_time))
 
-
 # script for Pearson correlation function required to calculate intelligibility value
+
 
 def getPearsonCorrelation(var1, var2):
     result = 0
@@ -367,20 +356,3 @@ def getPearsonCorrelation(var1, var2):
         tot_coproduct += (dlt_x * dlt_y)
     result = tot_coproduct / (math.sqrt(tot_sq_x) * math.sqrt(tot_sq_y))
     return result
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

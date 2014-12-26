@@ -5,3 +5,4 @@ author=Pierre-Luc auclair
 qgisMinimumVersion=2.0
 description=Space Syntax Analysis
 version=version 0.2
+category=Vector
